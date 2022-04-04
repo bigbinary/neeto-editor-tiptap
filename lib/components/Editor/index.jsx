@@ -18,6 +18,28 @@ import {
   getIsPlaceholderActive,
 } from "./helpers";
 
+const joinText = ([firstLine, ...otherLines]) => {
+  const otherLinesString = otherLines.reduce(
+    (string, { text }) => (text ? `${string}\n${text}` : string),
+    ""
+  );
+  return `${firstLine.text}${otherLinesString}`;
+};
+
+const NoteBlock = ({ children }) => (
+  <div
+    key="index"
+    style={{
+      backgroundColor: "#e0e0e0",
+      marginTop: "10px",
+      padding: "5px 10px",
+      whiteSpace: "pre-line",
+    }}
+  >
+    {children}
+  </div>
+);
+
 const Editor = (
   {
     forceTitle = false,
@@ -52,9 +74,11 @@ const Editor = (
   ref
 ) => {
   const [isImageUploadVisible, setImageUploadVisible] = useState(false);
+  const [notes, setNotes] = useState([]);
 
   const isFixedMenuActive = !markdownMode && menuType === "fixed";
   const isBubbleMenuActive = !markdownMode && menuType === "bubble";
+  const isNotesAddonActive = addons.includes("note");
   const isSlashCommandsActive = !markdownMode && !hideSlashCommands;
   const isPlaceholderActive = getIsPlaceholderActive(placeholder);
   const showSlashCommandPlaceholder =
@@ -107,14 +131,27 @@ const Editor = (
         style: stringifyObject(editorStyles),
       },
     },
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      if (isNotesAddonActive) {
+        const content = editor.getJSON().content;
+        const newNotes = content.reduce((collection, block) => {
+          if (block.type === "note")
+            return [...collection, joinText(block.content)];
+          return collection;
+        }, []);
+        setNotes(newNotes);
+      }
+      onChange(editor.getHTML());
+    },
     onFocus,
     onBlur,
   });
 
   const markdownEditor = useMarkdownEditor({
     content: initialValue,
-    onUpdate: ({ html }) => onChange(html),
+    onUpdate: ({ html }) => {
+      onChange(html);
+    },
     onSubmit: ({ html }) => onSubmit && onSubmit(html),
     markdownMode,
   });
@@ -182,6 +219,14 @@ const Editor = (
           limit={characterLimit}
           strategy={characterCountStrategy}
         />
+      )}
+
+      {isNotesAddonActive && (
+        <>
+          {notes.map((note, index) => (
+            <NoteBlock key={index}>{note}</NoteBlock>
+          ))}
+        </>
       )}
     </div>
   );

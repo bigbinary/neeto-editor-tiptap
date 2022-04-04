@@ -233,10 +233,7 @@ const App = () => {
       />
       <div className="flex mt-4">
         <CodeBlock>{STRINGS.addonsSampleCode}</CodeBlock>
-        <SampleEditor
-          addons={SAMPLE_ADDONS}
-          onChange={(props) => console.log(props)}
-        />
+        <SampleEditor addons={SAMPLE_ADDONS} />
       </div>
       <h3 className="mt-4 mb-2 font-bold">Unsplash image picker</h3>
       <Description>
